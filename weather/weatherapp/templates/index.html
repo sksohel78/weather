@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <title>Weather| Tutorial</title>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css"/>
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"></script>
+</head>
+
+<body>
+<div class="row p-5">
+    <div class="col">
+        <form>
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-3">
+                    <label>Name</label>
+                    <input type=text" class="form-control" id="name">
+                </div>
+                <div class="col-md-3">
+                    <label>Lat</label>
+                    <input type="number" id="lat" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label>Long</label>
+                    <input type="number" id="long" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <br/>
+                    <button type="button" class="btn btn-primary btn-submit">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<br/>
+<div class="row p-5">
+    <div class="col-md-6">
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>Sr.No.</th>
+                <th>Name</th>
+                <th>Point</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="tbody">
+            {% include 'points_include.html' %}
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <div class="p-2" id="map" style="width: 100%; height: 580px"></div>
+    </div>
+</div>
+
+<script>
+         // Creating map options
+         var mapOptions = {
+            center: [17.385044, 78.486671],
+            zoom: 10
+         }
+
+         // Creating a map object
+         var map = new L.map('map', mapOptions);
+
+         // Creating a Layer object
+         var layer = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+
+         // Adding layer to the map
+         map.addLayer(layer);
+         p_marker = [];
+         map.on('click', function(e) {
+         try {
+         map.removeLayer(p_marker[0]);
+         p_marker.pop(p_marker[0]);
+         } catch (e){};
+
+         marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+         p_marker.push(marker);
+         $("#lat").val(e.latlng.lat);
+         $("#long").val(e.latlng.lng);
+         
+});
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+<script type="text/javascript">
+  $(".btn-submit").on("click", function(){
+    console.log('submit button clicked');
+    var lat = $("#lat").val();
+    var lng = $("#long").val();
+    var name = $("#name").val();
+    var token = $("input[name=csrfmiddlewaretoken]").val();
+    if (lat == '' || lng==''){
+      alert('Please select point on map first');
+    } else {
+      data = {lat:lat, lng:lng, name:name, csrfmiddlewaretoken:token}
+      $.ajax({
+        url:'/add_point/',
+        method:'POST',
+        data:data,
+        dataType:'json',
+        success:function(data){
+          if (data.status == 1){
+            $("#tbody").html(data.data);
+            $('form')[0].reset();
+            alert('Point added succesfully');
+          } else {
+            alert(data.Message);
+          }
+        }
+      })
+    }
+  })
+
+  $("#tbody").on("click", ".btn-plot", function(){
+    console.log("Get button clicked");
+    console.log('edit button clicked');
+    let id = $(this).attr("data-sid");
+    var token = $("input[name=csrfmiddlewaretoken]").val();
+    data={id:id, csrfmiddlewaretoken:token}
+    $.ajax({
+      url: '/get_location/',
+      method:"POST",
+      dataType:"json",
+      data:data,
+      success:function(data){
+        console.log(data);
+        if (data.status == 1){
+          try {
+         map.removeLayer(p_marker[0]);
+         p_marker.pop(p_marker[0]);
+         } catch (e){};
+          marker = L.marker([data.data.lat, data.data.lng]).addTo(map);
+          marker.bindPopup(data.data.popup).openPopup();
+         p_marker.push(marker);
+         map.panTo(new L.LatLng(data.data.lat, data.data.lng), 10);
+        } else {
+          alert(data.Message);
+        }
+      }
+    })
+  })
+</script>
+</body>
+
+
+</html>

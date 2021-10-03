@@ -1,0 +1,5 @@
+<b>{{name}}</b>
+{% for period in periods %}
+<p>{{period.name}}</p>
+<p>Temp: {{period.temperature}} {{period.temperatureUnit}}, Speed: {{period.windSpeed}}</p>
+{% endfor %}

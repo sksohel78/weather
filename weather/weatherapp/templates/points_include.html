@@ -1,0 +1,10 @@
+{% for point in points %}
+<tr>
+    <td>{{forloop.counter}}</td>
+    <td>{{point.name}}</td>
+    <td>{{point.point.x}}, {{point.point.y}}</td>
+    <td>
+        <button type="button" class="btn btn-success btn-sm btn-plot" data-sid="{{point.id}}">Get</button>
+    </td>
+</tr>
+{% endfor %}
